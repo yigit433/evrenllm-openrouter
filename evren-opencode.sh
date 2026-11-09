@@ -67,8 +67,8 @@ fi
 KEY_FILE="$CONFIG_DIR/.evren-key"
 
 # Config, anahtari bu dosyadan okur (shell/GUI/arka plan servisinden bagimsiz).
-# Not: goreli yol ({file:.evren-key}) OpenCode 2.x'te calisma dizinine gore
-# cozuldugu icin kullanilmiyor; ev dizini altindaysa ~ ile, degilse mutlak yol.
+# OpenCode "~/" onekini os.homedir() ile cozer (Windows dahil); ev dizini
+# disindaki config dizinleri icin mutlak yol yazilir.
 case "$KEY_FILE" in
   "$HOME"/*) API_KEY_REF="{file:~/${KEY_FILE#"$HOME"/}}" ;;
   *)         API_KEY_REF="{file:$KEY_FILE}" ;;

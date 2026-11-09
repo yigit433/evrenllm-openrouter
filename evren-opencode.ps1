@@ -34,7 +34,7 @@ $BaseUrl    = if ($env:EVREN_BASE_URL) { $env:EVREN_BASE_URL } else { "https://e
 $ProviderId = "evren"
 $Utf8NoBom  = New-Object System.Text.UTF8Encoding $false
 
-# ── Cikti yardimcilari ───────────────────────────────────────────────────────
+# -- Cikti yardimcilari -------------------------------------------------------
 
 function Fail([string]$Message) {
     Write-Host ""
@@ -47,7 +47,7 @@ function Warn([string]$Message) { Write-Host "[UYARI] $Message" -ForegroundColor
 
 $HasOpenCode = [bool](Get-Command opencode -ErrorAction SilentlyContinue)
 
-# ── Config yollari ───────────────────────────────────────────────────────────
+# -- Config yollari -----------------------------------------------------------
 # OpenCode'un gercekten kullandigi dizini ondan ogren; yoksa ~/.config/opencode.
 
 $HomeDir   = [Environment]::GetFolderPath("UserProfile")
@@ -71,8 +71,9 @@ else { $ConfigPath = $JsoncPath }
 
 $KeyFile = Join-Path $ConfigDir ".evren-key"
 
-# Config, anahtari bu dosyadan okur. Goreli yol ({file:.evren-key}) OpenCode 2.x'te
-# calisma dizinine gore cozuldugu icin kullanilmiyor: ev dizini altindaysa ~ ile, degilse mutlak yol.
+# Config, anahtari bu dosyadan okur (GUI/desktop dahil her yerden calisir).
+# OpenCode "~/" onekini os.homedir() ile cozer (Windows'ta C:\Users\<kullanici>);
+# ev dizini disindaki config dizinleri icin mutlak yol (C:/...) yazilir.
 $homePrefix = $HomeDir.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
 if ($KeyFile.StartsWith($homePrefix, [StringComparison]::OrdinalIgnoreCase)) {
     $ApiKeyRef = "{file:~/" + ($KeyFile.Substring($homePrefix.Length) -replace '\\', '/') + "}"
@@ -80,7 +81,7 @@ if ($KeyFile.StartsWith($homePrefix, [StringComparison]::OrdinalIgnoreCase)) {
     $ApiKeyRef = "{file:" + ($KeyFile -replace '\\', '/') + "}"
 }
 
-# ── HTTP yardimcisi ──────────────────────────────────────────────────────────
+# -- HTTP yardimcisi ----------------------------------------------------------
 # Yanit govdesi UTF-8 olarak cozulur (5.1'de Invoke-RestMethod Turkce karakterleri bozabiliyor).
 # Donus: @{ Code = <int>; Data = <PSObject|null>; Raw = <string> }
 
@@ -119,7 +120,7 @@ function Get-ApiErrorMessage($Resp) {
     return $Resp.Raw
 }
 
-# ── Config okuma/yazma ───────────────────────────────────────────────────────
+# -- Config okuma/yazma -------------------------------------------------------
 
 # JSONC -> JSON: string'lere dokunmadan // ve /* */ yorumlarini ve sondaki virgulleri siler.
 function ConvertFrom-Jsonc([string]$Text) {
@@ -171,7 +172,7 @@ function Remove-Property($Obj, [string]$Name) {
 
 function Get-PropCount($Obj) { return @($Obj.PSObject.Properties).Count }
 
-# ── Modeller ─────────────────────────────────────────────────────────────────
+# -- Modeller -----------------------------------------------------------------
 
 $FallbackModelsJson = '{"object":"list","data":[{"id":"glm-5.3","task":"chat","context_length":524288,"default_max_output_tokens":16384},{"id":"deepseek-v4.1-flash","task":"chat","context_length":1048576,"default_max_output_tokens":16384},{"id":"deepseek-v4-flash","task":"chat","context_length":1048576,"default_max_output_tokens":16384},{"id":"qwen3.8-flash-next","task":"chat","context_length":262144,"default_max_output_tokens":16384},{"id":"gemma-4-31b","task":"chat","context_length":262144,"default_max_output_tokens":16384},{"id":"qwen3-vl-30b","task":"vision_chat","context_length":262144,"default_max_output_tokens":16384},{"id":"mimo-v2.6-pro","task":"chat","context_length":1048576,"default_max_output_tokens":16384},{"id":"auto","task":"chat","context_length":32768,"default_max_output_tokens":16384}]}'
 
@@ -298,9 +299,9 @@ function Test-OpenCode {
     }
 }
 
-# ════════════════════════════════════════════════════════════════════════════
+# ============================================================================
 # KALDIRMA
-# ════════════════════════════════════════════════════════════════════════════
+# ============================================================================
 
 if ($Uninstall) {
     Write-Host "=== EVREN LLM OpenCode Kaldirma ===" -ForegroundColor Cyan
@@ -351,9 +352,9 @@ if ($Uninstall) {
     exit 0
 }
 
-# ════════════════════════════════════════════════════════════════════════════
+# ============================================================================
 # MODEL SENKRONU (anahtar sormaz, sartlar adimini atlar)
-# ════════════════════════════════════════════════════════════════════════════
+# ============================================================================
 
 if ($SyncModels) {
     Write-Host "=== EVREN LLM Model Listesi Guncellemesi ===" -ForegroundColor Cyan
@@ -373,16 +374,16 @@ if ($SyncModels) {
     exit 0
 }
 
-# ════════════════════════════════════════════════════════════════════════════
+# ============================================================================
 # KURULUM
-# ════════════════════════════════════════════════════════════════════════════
+# ============================================================================
 
 Write-Host "=== EVREN LLM + OpenCode Kurulumu ===" -ForegroundColor Cyan
 
 # Config bozuksa hicbir sey yapmadan once dur.
 $cfg = Read-Config
 
-# ── 1) API anahtarini al ─────────────────────────────────────────────────────
+# -- 1) API anahtarini al -----------------------------------------------------
 
 $secureKey = Read-Host "EVREN LLM API anahtarinizi girin" -AsSecureString
 $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureKey)
@@ -393,7 +394,7 @@ $script:ApiKey = ($script:ApiKey -replace '\s', '')
 if ([string]::IsNullOrWhiteSpace($script:ApiKey)) { Fail "API anahtari bos birakilamaz." }
 if ($script:ApiKey -notmatch '^evren_llm_[A-Za-z0-9_-]+$') { Fail "API anahtari beklenen 'evren_llm_...' formatinda degil." }
 
-# ── 2) Anahtari API'de dogrula + sartlar (hicbir sey kaydedilmeden once) ─────
+# -- 2) Anahtari API'de dogrula + sartlar (hicbir sey kaydedilmeden once) -----
 
 $status = Invoke-EvrenApi GET "/terms/status"
 switch ($status.Code) {
@@ -433,7 +434,7 @@ else {
     Ok "Kullanim sartlari zaten kabul edilmis (v$termsVersion)."
 }
 
-# ── 3) Model listesi ─────────────────────────────────────────────────────────
+# -- 3) Model listesi ---------------------------------------------------------
 
 $modelsMap = Get-EvrenModels
 if (-not $modelsMap) {
@@ -441,7 +442,7 @@ if (-not $modelsMap) {
     $modelsMap = ConvertTo-ModelsMap ($FallbackModelsJson | ConvertFrom-Json)
 }
 
-# ── 4) Anahtari kaydet ───────────────────────────────────────────────────────
+# -- 4) Anahtari kaydet -------------------------------------------------------
 
 New-Item -ItemType Directory -Force -Path $ConfigDir | Out-Null
 [IO.File]::WriteAllText($KeyFile, $script:ApiKey, $Utf8NoBom)   # -Encoding UTF8NoBOM 5.1'de yok
@@ -451,7 +452,7 @@ if ($null -ne [Environment]::GetEnvironmentVariable("EVREN_LLM_API_KEY", "User")
     Info "Eski kurulumdan kalan EVREN_LLM_API_KEY kullanici degiskeni artik gerekmiyor (-Uninstall ile ya da elle silebilirsiniz)."
 }
 
-# ── 5) Config'e yaz ──────────────────────────────────────────────────────────
+# -- 5) Config'e yaz ----------------------------------------------------------
 
 Merge-EvrenConfig $cfg $modelsMap
 Backup-Config
@@ -459,7 +460,7 @@ Write-Config $cfg
 Ok "OpenCode config guncellendi (diger provider'lar korundu): $ConfigPath"
 Info "Varsayilan model: $($cfg.model)  |  small_model: $($cfg.small_model)"
 
-# ── 6) Dogrula ───────────────────────────────────────────────────────────────
+# -- 6) Dogrula ---------------------------------------------------------------
 
 Write-Host ""
 Test-OpenCode
